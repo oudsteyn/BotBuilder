@@ -2960,6 +2960,14 @@ export class EntityRecognizer {
     static resolveTime(entities: IEntity[]): Date;
 
     /**
+     * Calculates Dates from a set of datetime entities.
+     * @param entities List of entities to extract date from.
+     * @param refDate (Optional) reference date used to calculate other dates.
+     * @returns The successfully calculated array of Dates.
+     */
+    static resolveAllTimes(entities: IEntity[], refDate?: Date): Date[];
+
+    /**
      * Recognizes a time from a users utterance. The utterance is parsed using the [Chrono](http://wanasit.github.io/pages/chrono/) library.
      * @param utterance Text utterance to parse.
      * @param refDate (Optional) reference date used to calculate the final date.

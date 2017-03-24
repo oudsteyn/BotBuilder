@@ -143,6 +143,92 @@ export class EntityRecognizer {
         return resolvedDate;
     }
 
+    static resolveAllTimes(entities: IEntity[], refDate?: Date): Date[] {
+        const _this = this;
+        const dates = [];
+        let resolvedDate;
+        let index = 0;
+        let entity: ILuisDateTimeEntity;
+        let date;
+        let time;
+        let continueLoop = true;
+        let tzo;
+
+        if (!refDate) {
+            refDate = new Date();
+        }
+
+        tzo = utils.toTimezoneOffsetInHours(refDate);
+
+        while (index < entities.length) {
+            do {
+                entity = <ILuisDateTimeEntity>entities[index++];
+                if (entity.resolution) {
+                    switch (entity.resolution.resolution_type || entity.type) {
+                        case 'builtin.datetime':
+                        case 'builtin.datetime.date':
+                        case 'builtin.datetime.time':
+                            const parts = (entity.resolution.date || entity.resolution.time).split('T');
+                            if (!date && _this.dateExp.test(parts[0])) {
+                                date = parts[0];
+                            }
+                            
+                            if (!time && parts[1]) {
+                                time = 'T' + parts[1];
+                                if (time === 'TMO') {
+                                    time = 'T08:00:00';
+
+                                } else if (time === 'TNI') {
+                                    time = 'T20:00:00';
+
+                                } else if (time.length === 3) {
+                                    time = time + ':00:00';
+
+                                } else if (time.length === 6) {
+                                    time = time + ':00';
+                                }
+                            }
+
+                            if (date && time) {
+                                continueLoop = false;
+                            }
+                            break;
+                        case 'chrono.duration':
+                            // Date is already calculated
+                            const duration = <IChronoDuration>entity;
+                            resolvedDate = duration.resolution.start;
+                            continueLoop = false;
+                    }
+                }
+
+            } while (index < entities.length && continueLoop);
+            if (!resolvedDate && (date || time)) {
+                // The user can just say "at 9am" so we'll use today if no date.
+                if (!date) {
+                    date = utils.toDate8601(refDate);
+                }
+                if (time) {
+                    if (tzo) {
+                        time = time + tzo;
+                    }
+                    date += time;
+                }
+
+                resolvedDate = new Date(date);
+            }
+
+            dates.push(resolvedDate);
+
+            date = null;
+            time = null;
+            refDate = resolvedDate;
+            resolvedDate = null;
+            continueLoop = true;
+        }
+
+        return dates;
+    }
+
     static recognizeTime(utterance: string, refDate?: Date): IChronoDuration {
         var response: IChronoDuration;
         try {

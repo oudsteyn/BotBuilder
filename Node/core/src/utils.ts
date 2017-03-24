@@ -91,3 +91,10 @@ export function moveFieldsTo(frm: any, to: any, fields: { [id:string]: string; }
 export function toDate8601(date: Date): string {
     return sprintf.sprintf('%04d-%02d-%02d', date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate());
 }
+
+export function toTimezoneOffsetInHours(date: Date): string {
+  const tzo = -date.getTimezoneOffset();
+  const dif = tzo >= 0 ? '+' : '-';
+
+  return sprintf.sprintf('%s%02d:%02d', dif, Math.abs(Math.floor((tzo / 60))), Math.abs((tzo % 60)));
+}
